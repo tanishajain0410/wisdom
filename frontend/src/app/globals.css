@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+:root { --navy:#173b68; --navy-deep:#071f3b; --yellow:#f5bf28; --coral:#a62d24; --cream:#fff8e8; --ink:#182b43; }
+@theme inline {
+  --font-sans: var(--font-dm-sans); --font-display: var(--font-nunito);
+  --color-navy: var(--navy); --color-navy-deep: var(--navy-deep); --color-sun: var(--yellow);
+  --color-coral: var(--coral); --color-cream: var(--cream); --color-ink: var(--ink);
+}
+* { box-sizing: border-box; }
+html {
+  overflow-x: clip;
+  max-width: 100%;
+}
+body {
+  margin: 0;
+  color: var(--ink);
+  background: white;
+  font-family: var(--font-dm-sans), sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Lenis Butter-Smooth Scrolling Engine */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-nunito), sans-serif;
+  overflow-wrap: break-word;
+}
+p, span, a, li {
+  overflow-wrap: break-word;
+}
+::selection { background: var(--yellow); color: var(--navy); }
+
+/* Unified Responsive Container */
+.section-wrap {
+  width: min(1160px, calc(100% - 32px));
+  margin-inline: auto;
+}
+@media (min-width: 640px) {
+  .section-wrap {
+    width: min(1160px, calc(100% - 48px));
+  }
+}
+
+.section-pad {
+  padding-block: 5.5rem;
+  scroll-margin-top: 95px;
+}
+@media (min-width: 1024px) {
+  .section-pad {
+    padding-block: 7rem;
+  }
+}
+@media (max-width: 640px) {
+  .section-pad {
+    padding-block: 3.5rem;
+    scroll-margin-top: 80px;
+  }
+}
+
+.eyebrow {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.soft-shadow {
+  box-shadow: 0 20px 60px rgba(15, 43, 79, 0.12);
+}
+.school-pattern {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.085) 1.25px, transparent 0);
+  background-size: 28px 28px;
+}
+a, button {
+  outline-offset: 4px;
+}
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--yellow);
+}
+.section-wrap article {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+@media (hover: hover) {
+  .section-wrap article:hover {
+    transform: translateY(-3px) translateZ(0);
+    box-shadow: 0 20px 46px rgba(15, 43, 79, 0.10);
+  }
+}
+.reveal {
+  animation: reveal 0.7s ease both;
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* GPU promotion for sticky header & floating controls */
+header.sticky, aside[aria-label="Quick Call"] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Prevent unwanted browser auto-zoom on mobile form inputs */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Hide Next.js development indicator badge */
+nextjs-portal,
+[data-nextjs-dev-overlay-portal],
+[data-nextjs-toast] {
+  display: none !important;
+}
