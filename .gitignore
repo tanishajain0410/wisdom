@@ -34,3 +34,5 @@ Thumbs.db
 
 # Testing artifacts and browser profiles
 .chrome-qa-*
+.agents/
+skills-lock.json

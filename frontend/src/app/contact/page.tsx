@@ -242,12 +242,20 @@ export default function ContactPage() {
               <p className="mt-2 text-xs leading-relaxed text-slate-300">
                 Call our admissions team directly at +91 70111 60057 for fee details, syllabus structure, and seat availability.
               </p>
-              <div className="mt-5">
+              <div className="mt-5 flex flex-wrap gap-2.5">
                 <a
                   href="tel:+917011160057"
-                  className="inline-flex items-center gap-2 rounded-xl bg-sun px-5 py-2.5 text-xs font-extrabold text-navy shadow-md transition hover:bg-amber-400"
+                  className="inline-flex items-center gap-2 rounded-xl bg-sun px-4 py-2.5 text-xs font-extrabold text-navy shadow-md transition hover:bg-amber-400"
                 >
                   <span>📞 Call +91 70111 60057</span>
+                </a>
+                <a
+                  href="https://wa.me/917011160057?text=Hello%20Wisdom%20International%20School%2C%20I%20would%20like%20to%20inquire%20about%20admissions."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-emerald-600"
+                >
+                  <span>💬 WhatsApp Us</span>
                 </a>
               </div>
             </div>

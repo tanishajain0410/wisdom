@@ -16,17 +16,17 @@ export const metadata: Metadata = {
   description: "Joyful, caring education from Play Group to Class 8 at Wisdom International School, Mauranipur.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
-      { url: "/favicon.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico?v=2", sizes: "any" },
+      { url: "/favicon-32x32.png?v=2", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16x16.png?v=2", type: "image/png", sizes: "16x16" },
+      { url: "/favicon.png?v=2", type: "image/png", sizes: "512x512" },
     ],
-    shortcut: "/favicon.ico",
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    shortcut: "/favicon.ico?v=2",
+    apple: [{ url: "/apple-touch-icon.png?v=2", sizes: "180x180" }],
   },
 };
 
-import { FloatingCallButton } from "@/components/FloatingCallButton";
+import { FloatingContactButtons } from "@/components/FloatingCallButton";
 import { SmoothScroll } from "@/components/SmoothScroll";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -35,7 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SmoothScroll />
         {children}
-        <FloatingCallButton />
+        <FloatingContactButtons />
       </body>
     </html>
   );

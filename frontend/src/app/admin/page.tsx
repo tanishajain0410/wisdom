@@ -588,9 +588,10 @@ export default function AdminDashboardPage() {
               <Image
                 src="/images/wisdom-logo-official.png"
                 alt="Logo"
-                width={38}
-                height={32}
-                className="object-contain"
+                width={80}
+                height={80}
+                quality={100}
+                className="h-10 w-auto object-contain"
               />
             </div>
             <div>

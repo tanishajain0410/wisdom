@@ -21,13 +21,9 @@ export function SiteHeader() {
     };
     if (open) {
       document.addEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
     }
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
     };
   }, [open]);
 
@@ -68,9 +64,9 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* Main Sticky Navigation Header */}
+      {/* Main Sticky Navigation Header - Stays visible on scroll with transform-gpu */}
       <header className="sticky top-0 z-50 border-b border-[#eadfcb] bg-white/98 shadow-[0_10px_35px_rgba(15,43,79,.07)] backdrop-blur-md transform-gpu">
-        <div className="mx-auto flex h-[80px] sm:h-[92px] w-full max-w-[1360px] items-center justify-between gap-4 px-4 sm:px-6 lg:gap-8 xl:gap-12">
+        <div className="relative mx-auto flex h-[80px] sm:h-[92px] w-full max-w-[1360px] items-center justify-between gap-4 px-4 sm:px-6 lg:gap-8 xl:gap-12">
           {/* Logo with Link back to Home */}
           <Link
             href="/"
@@ -80,10 +76,10 @@ export function SiteHeader() {
             <Image
               src="/images/wisdom-logo-official.png"
               alt="Official Wisdom International School Mauranipur emblem"
-              width={86}
-              height={74}
+              width={160}
+              height={160}
               priority
-              className="h-[56px] w-[66px] sm:h-[68px] sm:w-[80px] object-contain transition group-hover:drop-shadow-md"
+              className="h-[60px] w-auto sm:h-[72px] lg:h-[78px] object-contain transition duration-200 group-hover:drop-shadow-md"
             />
             <span className="flex flex-col leading-tight">
               <strong className="font-display text-[15px] sm:text-base lg:text-[15px] xl:text-[17px] 2xl:text-xl font-black text-navy group-hover:text-[#9c271e] transition-colors whitespace-nowrap">
@@ -125,7 +121,7 @@ export function SiteHeader() {
             id="main-nav"
             className={`${
               open ? "flex" : "hidden"
-            } absolute left-0 right-0 top-[80px] sm:top-[92px] max-h-[calc(100dvh-80px)] sm:max-h-[calc(100dvh-92px)] overflow-y-auto flex-col gap-1.5 border-b border-slate-200 bg-white/98 p-5 shadow-2xl backdrop-blur-2xl lg:static lg:flex lg:flex-row lg:items-center lg:ml-auto lg:gap-1 xl:gap-1.5 lg:border-0 lg:p-0 lg:text-sm lg:shadow-none lg:max-h-none lg:overflow-visible`}
+            } absolute left-0 right-0 top-full max-h-[calc(100dvh-80px)] sm:max-h-[calc(100dvh-92px)] overflow-y-auto flex-col gap-1.5 border-b border-slate-200 bg-white/98 p-5 shadow-2xl backdrop-blur-2xl lg:static lg:flex lg:flex-row lg:items-center lg:ml-auto lg:gap-1 xl:gap-1.5 lg:border-0 lg:p-0 lg:text-sm lg:shadow-none lg:max-h-none lg:overflow-visible`}
           >
             {navItems.map(([label, href]) => {
               const active = isRouteActive(href);

@@ -50,9 +50,10 @@ export default function AdminLoginPage() {
             <Image
               src="/images/wisdom-logo-official.png"
               alt="Wisdom International School"
-              width={70}
-              height={60}
-              className="object-contain"
+              width={140}
+              height={140}
+              quality={100}
+              className="h-16 w-auto object-contain"
             />
           </div>
 
