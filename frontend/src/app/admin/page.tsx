@@ -671,48 +671,61 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tab Selector */}
-        <div className="mt-8 flex border-b border-slate-200 bg-white px-4 rounded-2xl shadow-sm">
-          <button
-            onClick={() => setActiveTab('enquiries')}
-            className={`flex items-center gap-2 border-b-2 py-4 px-4 text-sm font-extrabold transition ${
-              activeTab === 'enquiries'
-                ? 'border-navy text-navy'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>📋</span>
-            <span>Admission Leads & Enquiries</span>
-            {newEnquiries > 0 && (
-              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs text-white">
-                {newEnquiries}
+        <div className="mt-8 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm">
+          <div className="grid grid-cols-3 gap-1.5">
+            {/* Tab 1: Enquiries */}
+            <button
+              onClick={() => setActiveTab('enquiries')}
+              className={`flex items-center justify-center gap-1 sm:gap-2 rounded-xl py-3 px-2 sm:px-4 text-xs sm:text-sm font-extrabold transition-all duration-200 ${
+                activeTab === 'enquiries'
+                  ? 'bg-navy text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-navy'
+              }`}
+            >
+              <span className="text-sm sm:text-base">📋</span>
+              <span className="sm:hidden">Leads</span>
+              <span className="hidden sm:inline">Admissions</span>
+              {newEnquiries > 0 && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black sm:text-xs ${
+                  activeTab === 'enquiries' ? 'bg-amber-400 text-navy' : 'bg-amber-500 text-white'
+                }`}>
+                  {newEnquiries}
+                </span>
+              )}
+            </button>
+
+            {/* Tab 2: Gallery */}
+            <button
+              onClick={() => setActiveTab('gallery')}
+              className={`flex items-center justify-center gap-1 sm:gap-2 rounded-xl py-3 px-2 sm:px-4 text-xs sm:text-sm font-extrabold transition-all duration-200 ${
+                activeTab === 'gallery'
+                  ? 'bg-navy text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-navy'
+              }`}
+            >
+              <span className="text-sm sm:text-base">📸</span>
+              <span>Gallery</span>
+              <span className={`text-[10px] font-bold sm:text-xs ${
+                activeTab === 'gallery' ? 'text-white/80' : 'text-slate-400'
+              }`}>
+                ({galleryItems.length})
               </span>
-            )}
-          </button>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('gallery')}
-            className={`flex items-center gap-2 border-b-2 py-4 px-4 text-sm font-extrabold transition ${
-              activeTab === 'gallery'
-                ? 'border-navy text-navy'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>📸</span>
-            <span>Gallery & Photo Manager</span>
-            <span className="text-xs font-semibold text-slate-400">({galleryItems.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 border-b-2 py-4 px-4 text-sm font-extrabold transition ${
-              activeTab === 'settings'
-                ? 'border-navy text-navy'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>⚙️</span>
-            <span>School Info & Security</span>
-          </button>
+            {/* Tab 3: Settings */}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`flex items-center justify-center gap-1 sm:gap-2 rounded-xl py-3 px-2 sm:px-4 text-xs sm:text-sm font-extrabold transition-all duration-200 ${
+                activeTab === 'settings'
+                  ? 'bg-navy text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-navy'
+              }`}
+            >
+              <span className="text-sm sm:text-base">⚙️</span>
+              <span className="sm:hidden">Settings</span>
+              <span className="hidden sm:inline">Settings & Info</span>
+            </button>
+          </div>
         </div>
 
         {/* TAB 1: ENQUIRIES */}
