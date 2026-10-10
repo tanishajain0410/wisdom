@@ -36,3 +36,8 @@ Thumbs.db
 .chrome-qa-*
 .agents/
 skills-lock.json
+
+# Keys and deployment secrets
+.deploy/
+*.tsbuildinfo
+

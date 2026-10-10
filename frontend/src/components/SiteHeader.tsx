@@ -8,7 +8,19 @@ import { navItems } from "@/data/site";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [admissionSession, setAdmissionSession] = useState("2026–27");
   const pathname = usePathname() || "/";
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.settings?.admission_session) {
+          setAdmissionSession(data.settings.admission_session);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Close mobile drawer on route change or Escape
   useEffect(() => {
@@ -45,9 +57,9 @@ export function SiteHeader() {
         <div className="mx-auto flex min-h-9 sm:min-h-10 w-full max-w-[1360px] items-center justify-between gap-3 px-4 sm:px-6 py-1.5 sm:py-0">
           <span className="hidden font-semibold sm:inline-flex items-center gap-2">
             <span className="size-2 rounded-full bg-sun animate-pulse" />
-            Admissions Open · Play Group to Class 8 (Session 2026–27)
+            Admissions Open · Play Group to Class 8 (Session {admissionSession})
           </span>
-          <div className="flex items-center gap-4 sm:gap-5 ml-auto sm:ml-0 font-medium text-xs sm:text-[13px]">
+          <div className="flex items-center gap-3 sm:gap-5 ml-auto sm:ml-0 font-medium text-xs sm:text-[13px]">
             <a
               className="flex items-center gap-1.5 font-bold text-sun transition hover:text-white"
               href="tel:+917011160057"
@@ -60,6 +72,13 @@ export function SiteHeader() {
             >
               <span>✉</span> wisdominternational.mau@gmail.com
             </a>
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center gap-1 font-bold text-sun/90 hover:text-white transition border-l border-white/20 pl-3 sm:pl-4"
+              title="Official Administrative Management Portal"
+            >
+              <span>🔒</span> Admin
+            </Link>
           </div>
         </div>
       </div>
@@ -148,6 +167,21 @@ export function SiteHeader() {
                 </Link>
               );
             })}
+
+            {/* Admin Portal Link with Lock Icon */}
+            <Link
+              href="/admin/login"
+              onClick={() => setOpen(false)}
+              className={`transition-all duration-200 text-sm lg:text-[13px] xl:text-sm whitespace-nowrap inline-flex items-center gap-1.5 font-black px-4 py-2.5 lg:px-3 lg:py-1.5 xl:px-3.5 xl:py-2 rounded-full border shadow-xs ${
+                isRouteActive("/admin")
+                  ? "bg-navy text-white border-navy"
+                  : "bg-slate-50 text-navy hover:text-[#9c271e] hover:bg-amber-50 hover:border-amber-300 border-slate-200"
+              }`}
+              title="Official Administrative Management Portal (Password Protected)"
+            >
+              <span className="text-[13px] sm:text-sm">🔒</span>
+              <span>Admin</span>
+            </Link>
 
             {/* Admission CTA Button */}
             <Link

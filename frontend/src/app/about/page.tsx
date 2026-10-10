@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { InteriorPage } from "@/components/InteriorPage";
 import { leaders } from "@/data/site";
+import { getAdmissionSession } from "@/lib/settings";
 
 const coreValues = [
   {
@@ -34,7 +35,9 @@ const coreValues = [
   },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const admissionSession = await getAdmissionSession();
+
   return (
     <InteriorPage
       eyebrow="About Our School"
@@ -248,7 +251,7 @@ export default function AboutPage() {
           <div className="relative z-10 grid gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-xs font-bold text-sun">
-                <span>🎒</span> Admissions Open 2026–27
+                <span>🎒</span> Admissions Open {admissionSession}
               </span>
               <h3 className="mt-3 font-display text-2xl sm:text-3xl lg:text-4xl font-black text-white">
                 Ready to take the next step with Wisdom?

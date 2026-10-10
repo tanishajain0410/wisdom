@@ -11,6 +11,7 @@ const galleryRoutes = require('./routes/gallery');
 const enquiryRoutes = require('./routes/enquiries');
 const settingRoutes = require('./routes/settings');
 const uploadRoutes = require('./routes/upload');
+const certificateRoutes = require('./routes/certificates');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -87,6 +88,7 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/enquiries', enquiryRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/certificates', certificateRoutes);
 
 // Fallback 404
 app.use((req, res) => {

@@ -1,7 +1,7 @@
 export type Program={stage:string;title:string;icon:string;description:string;points:string[];tone:"sun"|"sky"|"coral"};
 export type Certificate={classes:string;status:string;title:string;dateLabel:string;date:string;number:string;href:string;tone:"sun"|"coral"};
 export type GalleryMoment={src:string;alt:string;category:string;caption:string;wide?:boolean};
-export const navItems=[["Home","/"],["About","/about/"],["Learning","/learning/"],["Facilities","/facilities/"],["Gallery","/gallery/"],["Certificates","/certificates/"],["Contact","/contact/"]] as const;
+export const navItems=[["Home","/"],["About","/about/"],["Learning","/learning/"],["Facilities","/facilities/"],["Gallery","/gallery/"],["Contact","/contact/"]] as const;
 export const programs:Program[]=[
  {stage:"Early years",title:"Play Group & Nursery",icon:"☀",description:"Language, movement, creativity and social confidence through joyful, guided play.",points:["Story and rhyme","Sensory discovery","Fine-motor skills"],tone:"sun"},
  {stage:"Primary",title:"Classes 1–5",icon:"✎",description:"Strong foundations in literacy, numeracy and the world around us—built through participation.",points:["Concept clarity","Projects and teamwork","Creative expression"],tone:"sky"},
@@ -73,8 +73,8 @@ export const leaders=[
  {name:"Dr. Sandhya Richhariya",role:"Principal",image:"/images/principal-sandhya-richhariya.png",quote:"Every student is encouraged to explore their passions, expand their horizons and reach their full potential."},
 ] as const;
 export const certificates:Certificate[]=[
- {classes:"1–5",status:"Permanent recognition",title:"Pre-Primary & Primary School",dateLabel:"Issued",date:"16 July 2025",number:"JHA0936117190",href:"/documents/wisdom-primary-recognition-certificate.pdf",tone:"sun"},
- {classes:"6–8",status:"Provisional recognition",title:"Upper Primary School",dateLabel:"Valid",date:"25 Mar 2026 – 25 Mar 2027",number:"JHA09369070291",href:"/documents/wisdom-upper-primary-recognition-certificate.pdf",tone:"coral"},
+ {classes:"1–5",status:"Permanent recognition",title:"Pre-Primary & Primary School",dateLabel:"Issued",date:"16 July 2025",number:"JHA0936117190",href:"/api/certificates/download?doc=primary",tone:"sun"},
+ {classes:"6–8",status:"Provisional recognition",title:"Upper Primary School",dateLabel:"Valid",date:"25 Mar 2026 – 25 Mar 2027",number:"JHA09369070291",href:"/api/certificates/download?doc=upper-primary",tone:"coral"},
 ];
 
 export const activityNames=["Cultural Activities","Graduation","Holi","Diwali","Tulsi Poojan","Yoga","Art & Craft","Basant Panchami","Ganesh Chaturthi","Abacus Classes","Games","Health Check-up","Awareness Activities","Student Market","Parent-Teacher Meetings"] as const;

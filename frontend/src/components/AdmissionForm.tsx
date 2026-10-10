@@ -1,14 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function AdmissionForm({
   theme = 'light',
   hideHeader = false,
+  session,
 }: {
   theme?: 'light' | 'dark';
   hideHeader?: boolean;
+  session?: string;
 }) {
+  const [admissionSession, setAdmissionSession] = useState(session || '2026–27');
   const [studentName, setStudentName] = useState('');
   const [parentName, setParentName] = useState('');
   const [phone, setPhone] = useState('');
@@ -18,6 +21,21 @@ export function AdmissionForm({
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (session) {
+      setAdmissionSession(session);
+    } else {
+      fetch('/api/settings')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.settings?.admission_session) {
+            setAdmissionSession(data.settings.admission_session);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
 
   const isLight = theme === 'light';
 
@@ -131,7 +149,7 @@ export function AdmissionForm({
               isLight ? 'text-navy' : 'text-white'
             }`}
           >
-            Online Admission Enquiry (2026–27)
+            Online Admission Enquiry ({admissionSession})
           </h3>
           <p
             className={`mt-1 text-xs ${

@@ -4,12 +4,15 @@ import {SiteHeader} from "@/components/SiteHeader";
 import {SiteFooter} from "@/components/SiteFooter";
 import {SectionHeading} from "@/components/SectionHeading";
 import {GalleryShowcase} from "@/components/GalleryShowcase";
-import {certificates,facilityCards,leaders,programs} from "@/data/site";
+import {facilityCards,leaders,programs} from "@/data/site";
 import {AdmissionForm} from "@/components/AdmissionForm";
+import {getAdmissionSession} from "@/lib/settings";
 
 const button="inline-flex min-h-13 items-center justify-center rounded-xl px-6 font-extrabold transition hover:-translate-y-0.5";
 
-export default function Home() {
+export default async function Home() {
+  const admissionSession = await getAdmissionSession();
+
   return (
     <>
  <a href="#main" className="fixed -top-20 left-4 z-[100] bg-white px-4 py-2 focus:top-4">Skip to content</a><SiteHeader/>
@@ -21,7 +24,7 @@ export default function Home() {
       <div className="reveal text-center lg:text-left">
         <div className="mx-auto mb-4 sm:mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-sun lg:mx-0">
           <span className="size-2 rounded-full bg-sun animate-pulse" />
-          Admissions open · 2026–27
+          Admissions open · {admissionSession}
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[76px] font-black leading-[1.08] sm:leading-[.96] tracking-[-.04em] text-white">
           Where young minds<br />
@@ -284,89 +287,7 @@ export default function Home() {
 
   <section className="section-pad"><div className="section-wrap"><SectionHeading eyebrow="Leadership" title={<>A shared vision for<br/>meaningful education.</>}/><div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{leaders.map(({name,role,image,quote})=><article key={name} className="overflow-hidden rounded-3xl border border-slate-200 bg-white"><div className="relative aspect-[4/5] overflow-hidden bg-slate-100"><Image src={image} alt={`${name}, ${role} of Wisdom International School`} fill sizes="(max-width:1024px) 100vw,33vw" className="object-cover"/></div><blockquote className="m-0 p-6 sm:p-8"><p className="mb-6 sm:mb-7 text-sm sm:text-base leading-6 sm:leading-7">“{quote}”</p><footer><b className="block text-navy">{name}</b><span className="text-sm font-bold text-coral">{role}</span></footer></blockquote></article>)}</div></div></section>
 
-  <section id="certificates" className="section-pad bg-gradient-to-b from-[#f4f8fc] to-white">
-    <div className="section-wrap">
-      <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end mb-12">
-        <div>
-          <p className="eyebrow mb-2 text-coral">Recognition & Affiliation</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight text-navy">
-            Official school<br />recognition certificates.
-          </h2>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600">
-            Issued by the Office of the District Basic Education Officer (BSA), Jhansi under Government of Uttar Pradesh norms.
-          </p>
-        </div>
-        <Link
-          href="/certificates/"
-          className={`${button} w-full sm:w-auto bg-[#9c271e] text-white shadow-md hover:bg-[#821e16]`}
-        >
-          <span>View All Details</span> <span className="ml-1 text-sun">→</span>
-        </Link>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {certificates.map((c, idx) => (
-          <article
-            key={c.number}
-            className="group relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-[32px] border border-slate-200 bg-white p-5 sm:p-7 shadow-[0_10px_35px_rgba(15,43,79,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:flex-row sm:gap-6"
-          >
-            <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:justify-start">
-              <span className="inline-flex size-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 font-display text-sm font-black text-navy shadow-xs group-hover:border-[#9c271e] group-hover:bg-rose-50 group-hover:text-[#9c271e] transition-all">
-                {idx + 1}
-              </span>
-              <div
-                className={`flex h-24 w-24 flex-col items-center justify-center rounded-2xl ${
-                  c.tone === "sun" ? "bg-sun text-navy" : "bg-coral text-white"
-                }`}
-              >
-                <span className="font-display text-3xl font-black">{c.classes}</span>
-                <small className="font-bold text-[11px] uppercase tracking-wider">Classes</small>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-1 flex-col justify-between sm:mt-0">
-              <div>
-                <span className="inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                  ✓ {c.status}
-                </span>
-                <h3 className="mt-2 text-xl font-black text-navy">{c.title}</h3>
-                <dl className="my-3 space-y-1 text-xs text-slate-600">
-                  <div className="flex gap-2">
-                    <dt className="text-slate-400">{c.dateLabel}:</dt>
-                    <dd className="font-bold text-slate-800">{c.date}</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="text-slate-400">Order No:</dt>
-                    <dd className="font-mono font-bold text-[#9c271e]">{c.number}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-                <a
-                  className={`${button} min-h-10 bg-navy px-4 text-xs text-white hover:bg-navy-deep`}
-                  href={c.href}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Download PDF ↗
-                </a>
-                <Link
-                  href="/certificates/"
-                  className="text-xs font-bold text-[#9c271e] hover:underline"
-                >
-                  Verify Norms →
-                </Link>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-      <p className="mt-8 text-center text-xs text-slate-500">
-        The downloadable files are the original digitally signed certificates by the Department of Basic Education, Government of Uttar Pradesh.
-      </p>
-    </div>
-  </section>
 
   <section className="overflow-hidden bg-[#f4f8fc] py-14 sm:py-18">
     <div className="section-wrap grid items-center gap-8 lg:grid-cols-[1fr_.6fr] lg:gap-16">
@@ -400,7 +321,7 @@ export default function Home() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-sun mb-4">
             <span className="size-2 rounded-full bg-sun animate-pulse" />
-            Admissions Open · 2026–27 Session
+            Admissions Open · {admissionSession} Session
           </div>
           <h2 className="text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
             Come and see where<br />your child could flourish.
@@ -423,7 +344,7 @@ export default function Home() {
           </div>
         </div>
         <div>
-          <AdmissionForm theme="dark" />
+          <AdmissionForm theme="dark" session={admissionSession} />
         </div>
       </div>
     </div>

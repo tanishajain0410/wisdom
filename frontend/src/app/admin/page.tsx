@@ -30,7 +30,7 @@ interface GalleryItem {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'enquiries' | 'gallery' | 'settings'>('enquiries');
+  const [activeTab, setActiveTab] = useState<'enquiries' | 'gallery' | 'certificates' | 'settings'>('enquiries');
   const [loading, setLoading] = useState(true);
   const [adminUser, setAdminUser] = useState<string | null>(null);
 
@@ -108,6 +108,11 @@ export default function AdminDashboardPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
 
+  // Admission Session State
+  const [admissionSession, setAdmissionSession] = useState('2026–27');
+  const [savingSession, setSavingSession] = useState(false);
+  const [sessionMsg, setSessionMsg] = useState('');
+
   // Password Change State
   const [currPass, setCurrPass] = useState('');
   const [newPass, setNewPass] = useState('');
@@ -115,12 +120,38 @@ export default function AdminDashboardPage() {
   const [passErr, setPassErr] = useState('');
   const [changingPass, setChangingPass] = useState(false);
 
-  // Check auth
+  // Certificate Vault State (Secondary Password Protection)
+  const [vaultUnlocked, setVaultUnlocked] = useState(false);
+  const [vaultPasswordInput, setVaultPasswordInput] = useState('');
+  const [vaultShowPassword, setVaultShowPassword] = useState(false);
+  const [vaultVerifying, setVaultVerifying] = useState(false);
+  const [vaultError, setVaultError] = useState('');
+  const [vaultSuccess, setVaultSuccess] = useState('');
+  const [copiedVaultOrderNo, setCopiedVaultOrderNo] = useState<string | null>(null);
+
+  // Vault Password Change State (In Settings)
+  const [currVaultPass, setCurrVaultPass] = useState('');
+  const [newVaultPass, setNewVaultPass] = useState('');
+  const [vaultPassMsg, setVaultPassMsg] = useState('');
+  const [vaultPassErr, setVaultPassErr] = useState('');
+  const [changingVaultPass, setChangingVaultPass] = useState(false);
+
+  // Check auth (enforcing per-tab isolation)
   useEffect(() => {
+    const isTabAuth =
+      typeof window !== 'undefined' &&
+      sessionStorage.getItem('wisdom_admin_tab_authenticated') === 'true';
+
+    if (!isTabAuth) {
+      router.replace('/admin/login');
+      return;
+    }
+
     fetch('/api/auth/me')
       .then((res) => {
         if (!res.ok) {
-          router.push('/admin/login');
+          sessionStorage.removeItem('wisdom_admin_tab_authenticated');
+          router.replace('/admin/login');
           return null;
         }
         return res.json();
@@ -129,10 +160,14 @@ export default function AdminDashboardPage() {
         if (data?.authenticated) {
           setAdminUser(data.user.username);
           setLoading(false);
+        } else {
+          sessionStorage.removeItem('wisdom_admin_tab_authenticated');
+          router.replace('/admin/login');
         }
       })
       .catch(() => {
-        router.push('/admin/login');
+        sessionStorage.removeItem('wisdom_admin_tab_authenticated');
+        router.replace('/admin/login');
       });
   }, [router]);
 
@@ -178,6 +213,7 @@ export default function AdminDashboardPage() {
           if (data.settings.email) setEmail(data.settings.email);
           if (data.settings.address) setAddress(data.settings.address);
           if (data.settings.visiting_hours) setVisitingHours(data.settings.visiting_hours);
+          if (data.settings.admission_session) setAdmissionSession(data.settings.admission_session);
         }
       }
     } catch (err) {
@@ -195,8 +231,14 @@ export default function AdminDashboardPage() {
 
   // Handle Logout
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/admin/login');
+    try {
+      sessionStorage.removeItem('wisdom_admin_tab_authenticated');
+      sessionStorage.removeItem('wisdom_cert_vault_unlocked');
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    }
+    router.replace('/admin/login');
   };
 
   // Status Change
@@ -490,6 +532,7 @@ export default function AdminDashboardPage() {
             email,
             address,
             visiting_hours: visitingHours,
+            admission_session: admissionSession.trim(),
           },
         }),
       });
@@ -499,6 +542,34 @@ export default function AdminDashboardPage() {
       }
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  // Save Admission Session specifically
+  const handleSaveSession = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSavingSession(true);
+    setSessionMsg('');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            admission_session: admissionSession.trim(),
+          },
+        }),
+      });
+      if (res.ok) {
+        setSessionMsg('✓ Admission session updated successfully! Live across entire website.');
+        setTimeout(() => setSessionMsg(''), 4000);
+      } else {
+        setSessionMsg('Failed to update session.');
+      }
+    } catch {
+      setSessionMsg('Connection error. Failed to save session.');
+    } finally {
+      setSavingSession(false);
     }
   };
 
@@ -529,6 +600,97 @@ export default function AdminDashboardPage() {
       }
     } finally {
       setChangingPass(false);
+    }
+  };
+
+  // Check if Certificate Vault is already unlocked
+  useEffect(() => {
+    if (activeTab === 'certificates') {
+      fetch('/api/certificates/vault')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.unlocked) setVaultUnlocked(true);
+        })
+        .catch(() => {});
+    }
+  }, [activeTab]);
+
+  // Unlock Certificate Vault with secondary key
+  const handleUnlockVault = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vaultPasswordInput.trim()) {
+      setVaultError('Please enter the vault security key.');
+      return;
+    }
+    setVaultVerifying(true);
+    setVaultError('');
+    setVaultSuccess('');
+
+    try {
+      const res = await fetch('/api/certificates/vault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: vaultPasswordInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setVaultError(data.error || 'Incorrect vault security key.');
+        return;
+      }
+      setVaultUnlocked(true);
+      setVaultPasswordInput('');
+      setVaultSuccess('✓ Certificate Vault unlocked successfully.');
+    } catch {
+      setVaultError('Failed to verify vault key. Please try again.');
+    } finally {
+      setVaultVerifying(false);
+    }
+  };
+
+  // Re-lock Certificate Vault
+  const handleLockVault = async () => {
+    try {
+      await fetch('/api/certificates/vault', { method: 'DELETE' });
+    } catch {}
+    setVaultUnlocked(false);
+    setVaultSuccess('Certificate Vault locked.');
+    setVaultError('');
+  };
+
+  const handleCopyOrderNo = (num: string) => {
+    navigator.clipboard.writeText(num);
+    setCopiedVaultOrderNo(num);
+    setTimeout(() => setCopiedVaultOrderNo(null), 2500);
+  };
+
+  // Change Vault Security Key in Settings
+  const handleChangeVaultPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVaultPassErr('');
+    setVaultPassMsg('');
+    setChangingVaultPass(true);
+
+    try {
+      const res = await fetch('/api/certificates/vault/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: currVaultPass,
+          newPassword: newVaultPass,
+        }),
+      });
+      const d = await res.json();
+      if (res.ok && d.success) {
+        setVaultPassMsg('Vault security key updated successfully!');
+        setCurrVaultPass('');
+        setNewVaultPass('');
+      } else {
+        setVaultPassErr(d.error || 'Failed to update vault security key.');
+      }
+    } catch {
+      setVaultPassErr('Connection error updating vault key.');
+    } finally {
+      setChangingVaultPass(false);
     }
   };
 
@@ -577,6 +739,22 @@ export default function AdminDashboardPage() {
   const startItemIndex =
     filteredGalleryItems.length === 0 ? 0 : (safeGalleryPage - 1) * GALLERY_PER_PAGE + 1;
   const endItemIndex = Math.min(safeGalleryPage * GALLERY_PER_PAGE, filteredGalleryItems.length);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#071f3b] text-white">
+        <div className="flex flex-col items-center gap-4 text-center px-4">
+          <div className="size-12 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
+          <p className="font-display text-lg font-bold text-slate-100">
+            Verifying Admin Session...
+          </p>
+          <p className="text-xs text-slate-400">
+            Wisdom International School Administrator Portal
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100/70 font-sans text-slate-800">
@@ -672,7 +850,7 @@ export default function AdminDashboardPage() {
 
         {/* Tab Selector */}
         <div className="mt-8 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm">
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
             {/* Tab 1: Enquiries */}
             <button
               onClick={() => setActiveTab('enquiries')}
@@ -712,7 +890,28 @@ export default function AdminDashboardPage() {
               </span>
             </button>
 
-            {/* Tab 3: Settings */}
+            {/* Tab 3: Official Certificates Vault */}
+            <button
+              onClick={() => setActiveTab('certificates')}
+              className={`flex items-center justify-center gap-1 sm:gap-2 rounded-xl py-3 px-2 sm:px-4 text-xs sm:text-sm font-extrabold transition-all duration-200 ${
+                activeTab === 'certificates'
+                  ? 'bg-navy text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-navy'
+              }`}
+            >
+              <span className="text-sm sm:text-base">🔒</span>
+              <span className="sm:hidden">Vault</span>
+              <span className="hidden sm:inline">Certificates Vault</span>
+              <span className={`text-[10px] font-black sm:text-xs ${
+                activeTab === 'certificates'
+                  ? vaultUnlocked ? 'text-emerald-300' : 'text-amber-300'
+                  : vaultUnlocked ? 'text-emerald-600' : 'text-amber-600'
+              }`}>
+                {vaultUnlocked ? '🔓 Open' : '🔒 Locked'}
+              </span>
+            </button>
+
+            {/* Tab 4: Settings */}
             <button
               onClick={() => setActiveTab('settings')}
               className={`flex items-center justify-center gap-1 sm:gap-2 rounded-xl py-3 px-2 sm:px-4 text-xs sm:text-sm font-extrabold transition-all duration-200 ${
@@ -1405,9 +1604,352 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 3: SETTINGS */}
+        {/* ========================================================= */}
+        {/* TAB 3: SECRET CERTIFICATE VAULT (SECONDARY KEY PROTECTED) */}
+        {/* ========================================================= */}
+        {activeTab === 'certificates' && (
+          <div className="mt-6 space-y-6">
+            {!vaultUnlocked ? (
+              /* LOCKED VAULT SCREEN */
+              <div className="overflow-hidden rounded-3xl border border-[#d6a540]/40 bg-gradient-to-br from-[#06182e] via-[#0b2447] to-[#10335e] p-6 sm:p-10 text-white shadow-2xl">
+                <div className="mx-auto max-w-xl text-center">
+                  <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-amber-400/20 text-3xl shadow-inner ring-1 ring-amber-400/40">
+                    🔒
+                  </div>
+
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/15 px-3.5 py-1 text-xs font-bold text-amber-300">
+                    <span>🛡️</span> Confidential Administrative Vault
+                  </span>
+
+                  <h2 className="mt-4 font-display text-2xl sm:text-3xl font-black text-white">
+                    Official Certificates & Recognition Vault
+                  </h2>
+
+                  <p className="mt-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Official Department of Basic Education statutory certificates and registration order numbers have been <b>completely removed from the public website</b> and isolated in this vault. To access unmasked documents and downloads, enter the secondary <b>Certificate Vault Security Key</b>.
+                  </p>
+
+                  {vaultError && (
+                    <div className="mt-4 rounded-xl border border-rose-400/40 bg-rose-500/20 p-3 text-xs font-bold text-rose-200">
+                      ⚠️ {vaultError}
+                    </div>
+                  )}
+
+                  {vaultSuccess && (
+                    <div className="mt-4 rounded-xl border border-emerald-400/40 bg-emerald-500/20 p-3 text-xs font-bold text-emerald-200">
+                      {vaultSuccess}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleUnlockVault} className="mt-6 space-y-3.5 text-left">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                        Certificate Vault Security Key
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={vaultShowPassword ? 'text' : 'password'}
+                          value={vaultPasswordInput}
+                          onChange={(e) => setVaultPasswordInput(e.target.value)}
+                          placeholder="Enter Certificate Vault Key"
+                          required
+                          disabled={vaultVerifying}
+                          className="w-full rounded-xl border border-white/25 bg-white/10 px-4 py-3 pr-10 text-xs sm:text-sm font-medium text-white placeholder-slate-400 transition focus:border-amber-400 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setVaultShowPassword(!vaultShowPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-300 hover:text-white cursor-pointer"
+                          title={vaultShowPassword ? 'Hide key' : 'Show key'}
+                        >
+                          {vaultShowPassword ? '🙈' : '👁️'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={vaultVerifying}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-sun px-5 py-3 text-xs sm:text-sm font-black text-navy shadow-lg transition hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                    >
+                      {vaultVerifying ? (
+                        <>
+                          <span className="size-3.5 animate-spin rounded-full border-2 border-navy border-t-transparent" />
+                          <span>Verifying Vault Security Key...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🔓</span>
+                          <span>Unlock Certificate Vault</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+
+                  <p className="mt-4 text-[11px] text-slate-400">
+                    🔒 Vault access is strictly restricted to authorized school administrators.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* UNLOCKED VAULT SCREEN */
+              <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-6">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/60 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Certificate Vault Unlocked · Active Access</span>
+                    </div>
+                    <h2 className="mt-2 font-display text-2xl font-black text-navy sm:text-3xl">
+                      Official Government Recognition Certificates
+                    </h2>
+                    <p className="mt-1 text-xs sm:text-sm text-slate-500">
+                      Legally certified recognition orders issued by the Office of the District Basic Education Officer (BSA), Jhansi.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleLockVault}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-navy transition shadow-xs cursor-pointer"
+                  >
+                    <span>🔒</span>
+                    <span>Lock Vault Now</span>
+                  </button>
+                </div>
+
+                {vaultSuccess && (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">
+                    {vaultSuccess}
+                  </div>
+                )}
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Cert 1: Primary */}
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/70 p-6 shadow-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 border border-amber-200">
+                        <span>✓</span> Permanent Recognition
+                      </span>
+                      <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-xs font-bold text-slate-600 border border-slate-200">
+                        Classes 1–5
+                      </span>
+                    </div>
+
+                    <h3 className="mt-4 font-display text-xl font-black text-navy">
+                      Pre-Primary & Primary School
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Office of the District Basic Education Officer, Jhansi
+                    </p>
+
+                    <div className="mt-4 space-y-2 text-xs text-slate-700 bg-white p-4 rounded-xl border border-slate-200/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-bold">Order Number:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-[#9c271e] text-sm">JHA0936117190</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyOrderNo('JHA0936117190')}
+                            className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-600 hover:bg-white cursor-pointer"
+                          >
+                            {copiedVaultOrderNo === 'JHA0936117190' ? '✓ Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">Issue Date:</span>
+                        <span className="font-bold text-navy">16 July 2025</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">File Format:</span>
+                        <span className="font-bold text-slate-600">Digital Signed PDF (677 KB)</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                      <a
+                        href="/api/certificates/download?doc=primary&download=1"
+                        download
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-navy-deep transition cursor-pointer"
+                      >
+                        <span>📥</span> Download PDF
+                      </a>
+                      <a
+                        href="/api/certificates/download?doc=primary"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                      >
+                        <span>↗</span> Preview High-Res PDF
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Cert 2: Upper Primary */}
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/70 p-6 shadow-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-[#9c271e] border border-rose-200">
+                        <span>✓</span> Provisional Recognition
+                      </span>
+                      <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-xs font-bold text-slate-600 border border-slate-200">
+                        Classes 6–8
+                      </span>
+                    </div>
+
+                    <h3 className="mt-4 font-display text-xl font-black text-navy">
+                      Upper Primary School
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Office of the District Basic Education Officer, Jhansi
+                    </p>
+
+                    <div className="mt-4 space-y-2 text-xs text-slate-700 bg-white p-4 rounded-xl border border-slate-200/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-bold">Order Number:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-[#9c271e] text-sm">JHA09369070291</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyOrderNo('JHA09369070291')}
+                            className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-600 hover:bg-white cursor-pointer"
+                          >
+                            {copiedVaultOrderNo === 'JHA09369070291' ? '✓ Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">Validity:</span>
+                        <span className="font-bold text-navy">25 Mar 2026 – 25 Mar 2027</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">File Format:</span>
+                        <span className="font-bold text-slate-600">Digital Signed PDF (246 KB)</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                      <a
+                        href="/api/certificates/download?doc=upper-primary&download=1"
+                        download
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-navy-deep transition cursor-pointer"
+                      >
+                        <span>📥</span> Download PDF
+                      </a>
+                      <a
+                        href="/api/certificates/download?doc=upper-primary"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                      >
+                        <span>↗</span> Preview High-Res PDF
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: SETTINGS */}
         {activeTab === 'settings' && (
           <div className="mt-6 grid gap-8 lg:grid-cols-2">
+            {/* Card 1: Academic Admission Session Management */}
+            <div className="rounded-3xl border border-amber-300/80 bg-gradient-to-br from-amber-50/70 via-white to-white p-6 shadow-sm sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-900 border border-amber-300/60">
+                    <span>🎒</span> Academic Admission Session
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-500 bg-white px-2.5 py-0.5 rounded-full border border-slate-200">
+                    Live Website-Wide
+                  </span>
+                </div>
+
+                <h2 className="mt-3 font-display text-xl font-black text-navy">
+                  Admission Session Control
+                </h2>
+                <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                  Change the admission session year shown across the website — including Header banner, Hero badge, Admissions section, and Enquiry forms.
+                </p>
+
+                {sessionMsg && (
+                  <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-800 border border-emerald-300">
+                    {sessionMsg}
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveSession} className="mt-6 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700">
+                      Current Active Session
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={admissionSession}
+                      onChange={(e) => setAdmissionSession(e.target.value)}
+                      placeholder="e.g. 2026–27"
+                      className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-display text-base font-black text-navy shadow-inner focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                    />
+                  </div>
+
+                  {/* Quick Preset Buttons */}
+                  <div>
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                      Quick Session Presets:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['2025–26', '2026–27', '2027–28', '2028–29', '2029–30'].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setAdmissionSession(preset)}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                            admissionSession === preset
+                              ? 'bg-amber-400 text-navy font-black ring-2 ring-amber-500/60 shadow-xs'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Live Visual Preview */}
+                  <div className="rounded-2xl border border-amber-200/90 bg-amber-50/50 p-3.5 text-xs">
+                    <span className="block font-bold text-slate-600 text-[10px] uppercase tracking-wider mb-1.5">
+                      Live Website Badge Preview:
+                    </span>
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#9c271e] px-3.5 py-1 font-bold text-white shadow-xs">
+                      <span className="size-2 rounded-full bg-sun animate-pulse" />
+                      <span>Admissions Open · {admissionSession || '...'} Session</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={savingSession}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-sun px-6 py-2.5 text-sm font-black text-navy shadow-md transition hover:bg-amber-400 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                  >
+                    {savingSession ? (
+                      <>
+                        <span className="size-3.5 animate-spin rounded-full border-2 border-navy border-t-transparent" />
+                        <span>Saving Session...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>💾</span>
+                        <span>Save & Apply Session to Website</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Card 2: School Contact & Campus Info */}
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <h2 className="font-display text-xl font-black text-navy">School Contact & Campus Info</h2>
               <p className="mt-1 text-xs text-slate-500">
@@ -1479,6 +2021,7 @@ export default function AdminDashboardPage() {
               </form>
             </div>
 
+            {/* Card 2: Admin Password */}
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <h2 className="font-display text-xl font-black text-navy">Admin Password & Security</h2>
               <p className="mt-1 text-xs text-slate-500">
@@ -1532,6 +2075,67 @@ export default function AdminDashboardPage() {
                   className="rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-extrabold text-navy shadow-md transition hover:bg-amber-400 disabled:opacity-50"
                 >
                   {changingPass ? 'Updating...' : 'Update Password'}
+                </button>
+              </form>
+            </div>
+
+            {/* Card 3: Certificate Vault Security Key */}
+            <div className="rounded-3xl border border-amber-300/80 bg-amber-50/40 p-6 shadow-sm sm:p-8">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔒</span>
+                <h2 className="font-display text-xl font-black text-navy">Certificate Vault Key</h2>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Separate master key protecting the secret government certificates vault.
+              </p>
+
+              {vaultPassMsg && (
+                <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700 border border-emerald-200">
+                  {vaultPassMsg}
+                </div>
+              )}
+              {vaultPassErr && (
+                <div className="mt-4 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 border border-red-200">
+                  {vaultPassErr}
+                </div>
+              )}
+
+              <form onSubmit={handleChangeVaultPassword} className="mt-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-600">
+                    Current Vault Key
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={currVaultPass}
+                    onChange={(e) => setCurrVaultPass(e.target.value)}
+                    placeholder="Enter current vault key"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-navy focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-600">
+                    New Vault Key
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={newVaultPass}
+                    onChange={(e) => setNewVaultPass(e.target.value)}
+                    placeholder="Min 6 characters"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-navy focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={changingVaultPass}
+                  className="rounded-xl bg-navy px-6 py-2.5 text-sm font-extrabold text-white shadow-md transition hover:bg-navy-deep disabled:opacity-50 cursor-pointer"
+                >
+                  {changingVaultPass ? 'Updating...' : 'Update Vault Key'}
                 </button>
               </form>
             </div>

@@ -49,9 +49,6 @@ export function SiteFooter() {
             <Link href="/gallery/" className="hover:text-white transition">
               Photo Gallery
             </Link>
-            <Link href="/certificates/" className="hover:text-white transition">
-              Recognition
-            </Link>
             <Link href="/contact/" className="hover:text-white transition">
               Contact Us
             </Link>
